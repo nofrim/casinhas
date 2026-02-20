@@ -4,95 +4,124 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>Engenharia - Casinhas</title>
+    <title>Engenharia - Gestão de Campo</title>
     <style>
-        :root { --blue: #1a73e8; --red: #d93025; --gray: #5f6368; }
-        body { font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 10px; background: #f1f3f4; }
-        .header { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        :root { --blue: #1a73e8; --red: #d93025; --green: #1e8e3e; --gray: #5f6368; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 10px; background: #f1f3f4; padding-bottom: 50px; }
+        
+        /* Cabeçalho e Busca */
+        .header { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px; position: sticky; top: 5px; z-index: 100; }
         h2 { margin: 0 0 10px 0; color: var(--blue); font-size: 1.1rem; text-align: center; }
-        input { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #dadce0; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .search-box { background: #f1f3f4; border: none; padding: 12px; border-radius: 8px; width: 100%; box-sizing: border-box; font-size: 16px; margin-bottom: 10px; border: 2px solid transparent; }
+        .search-box:focus { border-color: var(--blue); outline: none; }
+        
+        /* Formulário de Cadastro/Edição */
+        .form-group { display: none; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px; }
+        .form-group.active { display: block; }
+        input, select { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #dadce0; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         .btn-main { width: 100%; padding: 14px; background: var(--blue); color: white; border: none; border-radius: 8px; font-weight: bold; margin-top: 5px; font-size: 16px; }
-        
+        .btn-toggle-form { background: none; color: var(--blue); border: none; width: 100%; font-weight: bold; padding: 10px; cursor: pointer; }
+
+        /* Estilo dos Cards */
         .section-title { font-weight: bold; color: #444; margin: 25px 0 8px 5px; text-transform: uppercase; font-size: 0.75rem; border-bottom: 2px solid var(--blue); display: inline-block; padding-bottom: 2px; }
+        .card { background: white; margin-bottom: 8px; border-radius: 10px; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: 0.3s; }
+        .card.concluido { border-left: 8px solid var(--green); opacity: 0.8; }
+        .card.pendente { border-left: 8px solid #f4b400; }
         
-        .card { background: white; margin-bottom: 8px; border-radius: 10px; display: flex; flex-direction: column; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .card-content { padding: 12px; text-decoration: none; color: #202124; display: block; }
         .card-content strong { display: block; font-size: 1rem; margin-bottom: 3px; }
         .card-content span { font-size: 0.8rem; color: var(--gray); font-family: monospace; }
-        
-        .card-actions { display: flex; border-top: 1px solid #f1f3f4; background: #fafafa; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; }
-        .card-actions button { flex: 1; padding: 8px; border: none; background: none; font-size: 0.75rem; color: var(--blue); font-weight: bold; cursor: pointer; }
-        .card-actions .btn-delete { color: var(--red); border-left: 1px solid #eee; }
+        .badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; color: white; margin-top: 5px; display: inline-block; }
+        .badge-pendente { background: #f4b400; }
+        .badge-concluido { background: var(--green); }
+
+        .card-actions { display: flex; border-top: 1px solid #f1f3f4; background: #fafafa; }
+        .card-actions button { flex: 1; padding: 10px; border: none; background: none; font-size: 0.75rem; color: var(--blue); font-weight: bold; }
+        .btn-status { color: var(--green) !important; border-left: 1px solid #eee !important; border-right: 1px solid #eee !important; }
+        .btn-delete { color: var(--red) !important; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h2>📍 Gestão de Visitas - Engenharia</h2>
-        <input type="hidden" id="editIndex" value="-1">
-        <input type="text" id="nome" placeholder="Nome do Beneficiário">
-        <input type="text" id="endereco" placeholder="Córrego / Localidade">
-        <input type="text" id="coords" placeholder="Lat, Long (Ex: -20.xxx, -41.xxx)">
-        <button class="btn-main" onclick="salvar()">Salvar Alteração / Novo</button>
+        <h2>📍 Gestão Engenharia</h2>
+        <input type="text" id="busca" class="search-box" placeholder="🔍 Buscar nome ou córrego..." oninput="render()">
+        
+        <button class="btn-toggle-form" onclick="document.getElementById('form-cadastro').classList.toggle('active')">
+            + Adicionar / Editar Local
+        </button>
+        
+        <div id="form-cadastro" class="form-group">
+            <input type="hidden" id="editIndex" value="-1">
+            <input type="text" id="nome" placeholder="Nome do Beneficiário">
+            <input type="text" id="endereco" placeholder="Córrego / Localidade">
+            <input type="text" id="coords" placeholder="Lat, Long (Ex: -20.xxx, -41.xxx)">
+            <select id="status">
+                <option value="pendente">Pendente</option>
+                <option value="concluido">Concluido</option>
+            </select>
+            <button class="btn-main" onclick="salvar()">Salvar no Sistema</button>
+        </div>
     </div>
 
     <div id="listaAgrupada"></div>
 
     <script>
+        // Dados originais (47 unidades)
         const dadosIniciais = [
-            {nome:"ALEX ESTANECK COELHO", endereco: "Córrego Capim Roxo", coords: "-20.484689, -41.986653"},
-            {nome:"ALINE FERNANDES ESTANECK", endereco: "Córrego Jacutinga", coords: "-20.408042, -41.987086"},
-            {nome:"ANA M. B. DE ALMEIDA", endereco: "Córrego Tavares", coords: "-20.430344, -41.923678"},
-            {nome:"ANGELICA D. S. M. MIRANDA", endereco: "Córrego José Pedro", coords: "-20.382497, -41.860444"},
-            {nome:"BRENO FERREIRA DA SILVA", endereco: "Córrego Vargem Grande", coords: "-20.405522, -41.895681"},
-            {nome:"BRUNO FERREIRA ANDRADE", endereco: "Córrego Poço Danta", coords: "-20.469133, -42.001147"},
-            {nome:"CAROLINA D.G. DE OLIVEIRA", endereco: "Córrego Vista Alegre", coords: "-20.437328, -41.947931"},
-            {nome:"DANIELA M. D. O. FARIA", endereco: "Córrego José Pedro", coords: "-20.390806, -41.864278"},
-            {nome:"DENIVAL WERNER", endereco: "Córrego Santo Augustinho", coords: "-20.436397, -41.929142"},
-            {nome:"DERCIO JOSE DE SOUZA", endereco: "Córrego Boa Sorte", coords: "-20.437164, -41.944783"},
-            {nome:"DIRCINEIA F. D. A. CAMARA", endereco: "Córrego José Pedro", coords: "-20.388386, -41.870819"},
-            {nome:"EDUARDO EMERICK SOARES", endereco: "Córrego Vargem Grande", coords: "-20.470644, -42.012942"},
-            {nome:"EDSON INOCENCIO FERREIRA", endereco: "Córrego Vargem Grande", coords: "-20.471300, -42.018783"},
-            {nome:"EMELY CAROLAYNE C.DE SOUZA", endereco: "Córrego Vargem Grande", coords: "-20.470664, -42.001447"},
-            {nome:"ELCEDIR C. F. DE OLIVEIRA", endereco: "Córrego Vargem Grande", coords: "-20.471108, -42.001172"},
-            {nome:"ELENICE CORREA SILVEIRA", endereco: "Córrego Jacutinga", coords: "-20.410753, -41.915331"},
-            {nome:"FRANCIELE P. F. VIEIRA", endereco: "Córrego Vargem Grande", coords: "-20.488208, -42.022181"},
-            {nome:"FERNANDO D. A. QUEIROZ", endereco: "Córrego Vargem Grande", coords: "-20.482092, -42.020036"},
-            {nome:"GABRIELA A. D. A. FONSECA", endereco: "Córrego Jacutinga", coords: "-20.382789, -41.909478"},
-            {nome:"GILSON G. D ROZA JUNIOR", endereco: "Córrego Vargem Grande", coords: "-20.468914, -42.012203"},
-            {nome:"GISELE CORREA VAZ", endereco: "Córrego Boa Esperança", coords: "-20.481000, -41.915161"},
-            {nome:"HUGO FERNANDES MIRANDA", endereco: "Córrego Vargem Grande", coords: "-20.466894, -42.015106"},
-            {nome:"IGOR PORTUGAL CORREA", endereco: "Córrego Jacutinga", coords: "-20.402344, -41.964047"},
-            {nome:"JAQUELINE D. O. B. GARCIA", endereco: "Córrego Indalassu", coords: "-20.472611, -42.013028"},
-            {nome:"LETICIA DE SOUZA M. AZEVEDO", endereco: "Córrego Vista Bela", coords: "-20.482417, -41.961775"},
-            {nome:"LUANA M.S.C.BRUM", endereco: "Córrego Jacutinga", coords: "-20.471722, -41.900494"},
-            {nome:"LUCAS TARDEN DOS SANTOS", endereco: "Córrego Vargem Grande", coords: "-20.489583, -42.022564"},
-            {nome:"LUCY STANECK CORREA", endereco: "Córrego Jacutinga", coords: "-20.459236, -41.978158"},
-            {nome:"LARISSA FARIA BARROSO", endereco: "Córrego Vargem Grande", coords: "-20.485300, -42.029275"},
-            {nome:"MARCOS ANTONIO CESAR", endereco: "Córrego Poço Danta", coords: "-20.469950, -42.003231"},
-            {nome:"MARIANE VIANA DA ROZA", endereco: "Córrego Vargem Grande", coords: "-20.472269, -42.000000"},
-            {nome:"MARLI OSORIO DOS SANTOS", endereco: "Córrego José Pedro", coords: "-20.480475, -41.986189"},
-            {nome:"PAMELA BOREL D. S. SILVA", endereco: "Córrego Jacutinga", coords: "-20.406397, -41.898014"},
-            {nome:"REGINALDO S. DOS SANTOS", endereco: "Córrego Vargem Grande", coords: "-20.487664, -42.024856"},
-            {nome:"REAN B. D. O. LIMA", endereco: "Córrego Vargem Grande", coords: "-20.477606, -42.000000"},
-            {nome:"RAQUEL COSTA OLIVEIRA SILVA", endereco: "Córrego José Pedro", coords: "-20.377531, -41.862439"},
-            {nome:"RICARDO C. DA SILVA", endereco: "Córrego José Pedro", coords: "-20.382275, -41.862344"},
-            {nome:"SABRINA SALIM ROQUE", endereco: "Córrego Jacutinga", coords: "-20.403358, -41.897942"},
-            {nome:"SEBASTIÃO DO SANTOS RAMOS", endereco: "Córrego Vargem Grande", coords: "-20.472664, -42.000000"},
-            {nome:"SEBASTIÃO BARROSO", endereco: "Córrego Vargem Grande", coords: "-20.472525, -42.000000"},
-            {nome:"SILVINA D. F. PACHECO", endereco: "Córrego Jacutinga", coords: "-20.387678, -41.912203"},
-            {nome:"TATIANE M. S. COSTA", endereco: "Córrego Vargem Grande", coords: "-20.489842, -42.034264"},
-            {nome:"VANESSA CARLA C. DA ROZA", endereco: "Córrego Vargem Grande", coords: "-20.480689, -42.000000"},
-            {nome:"VILMA A. DOS SANTOS", endereco: "Córrego Jacutinga", coords: "-20.487336, -42.022050"},
-            {nome:"VERONICA D. S. DIONIZIO", endereco: "Córrego Vargem Grande", coords: "-20.483039, -41.972231"},
-            {nome:"WARLEY BORGES DA ROZA", endereco: "Córrego Indalassu", coords: "-20.470656, -42.011811"},
-            {nome:"WALLACE BORGES DA ROZA", endereco: "Córrego Vargem Grande", coords: "-20.470725, -42.000000"}
+            {nome:"ALEX ESTANECK COELHO", endereco: "Córrego Capim Roxo", coords: "-20.484689, -41.986653", status: "pendente"},
+            {nome:"ALINE FERNANDES ESTANECK", endereco: "Córrego Jacutinga", coords: "-20.408042, -41.987086", status: "pendente"},
+            {nome:"ANA M. B. DE ALMEIDA", endereco: "Córrego Tavares", coords: "-20.430344, -41.923678", status: "pendente"},
+            {nome:"ANGELICA D. S. M. MIRANDA", endereco: "Córrego José Pedro", coords: "-20.382497, -41.860444", status: "pendente"},
+            {nome:"BRENO FERREIRA DA SILVA", endereco: "Córrego Vargem Grande", coords: "-20.405522, -41.895681", status: "pendente"},
+            {nome:"BRUNO FERREIRA ANDRADE", endereco: "Córrego Poço Danta", coords: "-20.469133, -42.001147", status: "pendente"},
+            {nome:"CAROLINA D.G. DE OLIVEIRA", endereco: "Córrego Vista Alegre", coords: "-20.437328, -41.947931", status: "pendente"},
+            {nome:"DANIELA M. D. O. FARIA", endereco: "Córrego José Pedro", coords: "-20.390806, -41.864278", status: "pendente"},
+            {nome:"DENIVAL WERNER", endereco: "Córrego Santo Augustinho", coords: "-20.436397, -41.929142", status: "pendente"},
+            {nome:"DERCIO JOSE DE SOUZA", endereco: "Córrego Boa Sorte", coords: "-20.437164, -41.944783", status: "pendente"},
+            {nome:"DIRCINEIA F. D. A. CAMARA", endereco: "Córrego José Pedro", coords: "-20.388386, -41.870819", status: "pendente"},
+            {nome:"EDUARDO EMERICK SOARES", endereco: "Córrego Vargem Grande", coords: "-20.470644, -42.012942", status: "pendente"},
+            {nome:"EDSON INOCENCIO FERREIRA", endereco: "Córrego Vargem Grande", coords: "-20.471300, -42.018783", status: "pendente"},
+            {nome:"EMELY CAROLAYNE C.DE SOUZA", endereco: "Córrego Vargem Grande", coords: "-20.470664, -42.001447", status: "pendente"},
+            {nome:"ELCEDIR C. F. DE OLIVEIRA", endereco: "Córrego Vargem Grande", coords: "-20.471108, -42.001172", status: "pendente"},
+            {nome:"ELENICE CORREA SILVEIRA", endereco: "Córrego Jacutinga", coords: "-20.410753, -41.915331", status: "pendente"},
+            {nome:"FRANCIELE P. F. VIEIRA", endereco: "Córrego Vargem Grande", coords: "-20.488208, -42.022181", status: "pendente"},
+            {nome:"FERNANDO D. A. QUEIROZ", endereco: "Córrego Vargem Grande", coords: "-20.482092, -42.020036", status: "pendente"},
+            {nome:"GABRIELA A. D. A. FONSECA", endereco: "Córrego Jacutinga", coords: "-20.382789, -41.909478", status: "pendente"},
+            {nome:"GILSON G. D ROZA JUNIOR", endereco: "Córrego Vargem Grande", coords: "-20.468914, -42.012203", status: "pendente"},
+            {nome:"GISELE CORREA VAZ", endereco: "Córrego Boa Esperança", coords: "-20.481000, -41.915161", status: "pendente"},
+            {nome:"HUGO FERNANDES MIRANDA", endereco: "Córrego Vargem Grande", coords: "-20.466894, -42.015106", status: "pendente"},
+            {nome:"IGOR PORTUGAL CORREA", endereco: "Córrego Jacutinga", coords: "-20.402344, -41.964047", status: "pendente"},
+            {nome:"JAQUELINE D. O. B. GARCIA", endereco: "Córrego Indalassu", coords: "-20.472611, -42.013028", status: "pendente"},
+            {nome:"LETICIA DE SOUZA M. AZEVEDO", endereco: "Córrego Vista Bela", coords: "-20.482417, -41.961775", status: "pendente"},
+            {nome:"LUANA M.S.C.BRUM", endereco: "Córrego Jacutinga", coords: "-20.471722, -41.900494", status: "pendente"},
+            {nome:"LUCAS TARDEN DOS SANTOS", endereco: "Córrego Vargem Grande", coords: "-20.489583, -42.022564", status: "pendente"},
+            {nome:"LUCY STANECK CORREA", endereco: "Córrego Jacutinga", coords: "-20.459236, -41.978158", status: "pendente"},
+            {nome:"LARISSA FARIA BARROSO", endereco: "Córrego Vargem Grande", coords: "-20.485300, -42.029275", status: "pendente"},
+            {nome:"MARCOS ANTONIO CESAR", endereco: "Córrego Poço Danta", coords: "-20.469950, -42.003231", status: "pendente"},
+            {nome:"MARIANE VIANA DA ROZA", endereco: "Córrego Vargem Grande", coords: "-20.472269, -42.000000", status: "pendente"},
+            {nome:"MARLI OSORIO DOS SANTOS", endereco: "Córrego José Pedro", coords: "-20.480475, -41.986189", status: "pendente"},
+            {nome:"PAMELA BOREL D. S. SILVA", endereco: "Córrego Jacutinga", coords: "-20.406397, -41.898014", status: "pendente"},
+            {nome:"REGINALDO S. DOS SANTOS", endereco: "Córrego Vargem Grande", coords: "-20.487664, -42.024856", status: "pendente"},
+            {nome:"REAN B. D. O. LIMA", endereco: "Córrego Vargem Grande", coords: "-20.477606, -42.000000", status: "pendente"},
+            {nome:"RAQUEL COSTA OLIVEIRA SILVA", endereco: "Córrego José Pedro", coords: "-20.377531, -41.862439", status: "pendente"},
+            {nome:"RICARDO C. DA SILVA", endereco: "Córrego José Pedro", coords: "-20.382275, -41.862344", status: "pendente"},
+            {nome:"SABRINA SALIM ROQUE", endereco: "Córrego Jacutinga", coords: "-20.403358, -41.897942", status: "pendente"},
+            {nome:"SEBASTIÃO DO SANTOS RAMOS", endereco: "Córrego Vargem Grande", coords: "-20.471011, -42.002211", status: "pendente"},
+            {nome:"SEBASTIÃO BARROSO", endereco: "Córrego Vargem Grande", coords: "-20.472525, -42.000000", status: "pendente"},
+            {nome:"SILVINA D. F. PACHECO", endereco: "Córrego Jacutinga", coords: "-20.387678, -41.912203", status: "pendente"},
+            {nome:"TATIANE M. S. COSTA", endereco: "Córrego Vargem Grande", coords: "-20.489842, -42.034264", status: "pendente"},
+            {nome:"VANESSA CARLA C. DA ROZA", endereco: "Córrego Vargem Grande", coords: "-20.480689, -42.000000", status: "pendente"},
+            {nome:"VILMA A. DOS SANTOS", endereco: "Córrego Jacutinga", coords: "-20.487336, -42.022050", status: "pendente"},
+            {nome:"VERONICA D. S. DIONIZIO", endereco: "Córrego Vargem Grande", coords: "-20.483039, -41.972231", status: "pendente"},
+            {nome:"WARLEY BORGES DA ROZA", endereco: "Córrego Indalassu", coords: "-20.470656, -42.011811", status: "pendente"},
+            {nome:"WALLACE BORGES DA ROZA", endereco: "Córrego Vargem Grande", coords: "-20.470725, -42.000000", status: "pendente"}
         ];
 
         function getLocais() {
-            const salvos = localStorage.getItem('casinhasDB');
+            const salvos = localStorage.getItem('casinhasDB_v2');
             if (!salvos) {
-                localStorage.setItem('casinhasDB', JSON.stringify(dadosIniciais));
+                localStorage.setItem('casinhasDB_v2', JSON.stringify(dadosIniciais));
                 return dadosIniciais;
             }
             return JSON.parse(salvos);
@@ -103,10 +132,11 @@
             const novo = {
                 nome: document.getElementById('nome').value.toUpperCase(),
                 endereco: document.getElementById('endereco').value,
-                coords: document.getElementById('coords').value.replace(" ", "")
+                coords: document.getElementById('coords').value.replace(" ", ""),
+                status: document.getElementById('status').value
             };
 
-            if (!novo.nome || !novo.coords) return alert("Preencha Nome e Coordenadas!");
+            if (!novo.nome || !novo.coords) return alert("Erro: Nome e Coordenadas são obrigatórios.");
 
             let locais = getLocais();
             if (index == "-1") {
@@ -116,38 +146,49 @@
                 document.getElementById('editIndex').value = "-1";
             }
 
-            localStorage.setItem('casinhasDB', JSON.stringify(locais));
-            document.getElementById('nome').value = '';
-            document.getElementById('endereco').value = '';
-            document.getElementById('coords').value = '';
+            localStorage.setItem('casinhasDB_v2', JSON.stringify(locais));
+            limparForm();
+            render();
+        }
+
+        function toggleStatus(i) {
+            let locais = getLocais();
+            locais[i].status = locais[i].status === 'pendente' ? 'concluido' : 'pendente';
+            localStorage.setItem('casinhasDB_v2', JSON.stringify(locais));
             render();
         }
 
         function render() {
             const container = document.getElementById('listaAgrupada');
+            const termoBusca = document.getElementById('busca').value.toLowerCase();
             let locais = getLocais();
             
-            // Ordenar por localidade (Córrego)
+            // Ordenação: Pendentes primeiro, depois por Córrego
             locais.sort((a, b) => a.endereco.localeCompare(b.endereco));
 
             let html = '';
             let lastEndereco = '';
 
             locais.forEach((local, i) => {
+                const buscaMatch = local.nome.toLowerCase().includes(termoBusca) || local.endereco.toLowerCase().includes(termoBusca);
+                if (!buscaMatch) return;
+
                 if (local.endereco !== lastEndereco) {
                     html += `<div class="section-title">📍 ${local.endereco || 'OUTROS'}</div>`;
                     lastEndereco = local.endereco;
                 }
 
                 html += `
-                    <div class="card">
+                    <div class="card ${local.status}">
                         <a class="card-content" href="https://www.google.com/maps/dir/?api=1&destination=${local.coords}" target="_blank">
                             <strong>${local.nome}</strong>
                             <span>${local.coords}</span>
+                            <div class="badge badge-${local.status}">${local.status.toUpperCase()}</div>
                         </a>
                         <div class="card-actions">
-                            <button onclick="prepararEdicao(${i})">⚙️ EDITAR</button>
-                            <button class="btn-delete" onclick="excluir(${i})">🗑️ EXCLUIR</button>
+                            <button onclick="prepararEdicao(${i})">EDITAR</button>
+                            <button class="btn-status" onclick="toggleStatus(${i})">STATUS</button>
+                            <button class="btn-delete" onclick="excluir(${i})">EXCLUIR</button>
                         </div>
                     </div>
                 `;
@@ -160,17 +201,27 @@
             document.getElementById('nome').value = local.nome;
             document.getElementById('endereco').value = local.endereco;
             document.getElementById('coords').value = local.coords;
+            document.getElementById('status').value = local.status;
             document.getElementById('editIndex').value = i;
+            document.getElementById('form-cadastro').classList.add('active');
             window.scrollTo({top: 0, behavior: 'smooth'});
         }
 
         function excluir(i) {
-            if (confirm("Apagar este registro permanentemente?")) {
+            if (confirm("Confirmar exclusão?")) {
                 let locais = getLocais();
                 locais.splice(i, 1);
-                localStorage.setItem('casinhasDB', JSON.stringify(locais));
+                localStorage.setItem('casinhasDB_v2', JSON.stringify(locais));
                 render();
             }
+        }
+
+        function limparForm() {
+            document.getElementById('nome').value = '';
+            document.getElementById('endereco').value = '';
+            document.getElementById('coords').value = '';
+            document.getElementById('editIndex').value = "-1";
+            document.getElementById('form-cadastro').classList.remove('active');
         }
 
         window.onload = render;
