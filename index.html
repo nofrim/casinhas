@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Engenharia - v5.0 Final</title>
+    <title>Engenharia Campo v5.1</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root { --apple-blue: #007AFF; --apple-green: #34C759; --apple-yellow: #FFCC00; --apple-bg: #F2F2F7; }
         body { font-family: -apple-system, system-ui, sans-serif; margin: 0; padding: 10px; background: var(--apple-bg); padding-bottom: 100px; }
-        .dashboard { background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); padding: 15px; border-radius: 15px; position: sticky; top: 10px; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        .stats { display: flex; justify-content: space-around; margin-bottom: 10px; font-weight: bold; }
+        .dashboard { background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); padding: 15px; border-radius: 15px; position: sticky; top: 10px; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 15px; border: 1px solid #ddd; }
+        .stats { display: flex; justify-content: space-around; margin-bottom: 10px; font-weight: bold; font-size: 1.2rem; }
         .search-box { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ccc; font-size: 16px; margin-bottom: 10px; box-sizing: border-box; }
         .card { background: white; margin-bottom: 15px; border-radius: 14px; padding: 15px; border-left: 6px solid var(--apple-yellow); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .card.concluido { border-left-color: var(--apple-green); background: #f9fff9; }
-        .section-title { font-weight: bold; color: #888; margin: 25px 0 10px 5px; text-transform: uppercase; font-size: 0.8rem; }
+        .section-title { font-weight: bold; color: #888; margin: 25px 0 10px 5px; text-transform: uppercase; font-size: 0.8rem; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
         .id-badge { background: #eee; padding: 2px 8px; border-radius: 5px; font-size: 0.8rem; font-weight: bold; }
         .name-link { color: var(--apple-blue); text-decoration: none; font-size: 1.1rem; font-weight: 600; display: block; margin: 5px 0; }
-        textarea { width: 100%; border-radius: 8px; border: 1px solid #ddd; padding: 10px; margin-top: 8px; box-sizing: border-box; font-family: inherit; }
-        .drive-btn { background: #4285F4; color: white; text-decoration: none; display: inline-block; padding: 10px; border-radius: 8px; font-size: 0.8rem; font-weight: bold; margin-top: 10px; width: 100%; text-align: center; box-sizing: border-box; }
-        .btn-status { width: 100%; padding: 12px; border: none; border-radius: 10px; margin-top: 10px; font-weight: bold; background: #E5E5EA; transition: 0.3s; }
+        textarea { width: 100%; border-radius: 8px; border: 1px solid #ddd; padding: 10px; margin-top: 8px; box-sizing: border-box; font-family: inherit; font-size: 14px; }
+        .drive-btn { background: #4285F4; color: white; text-decoration: none; display: inline-block; padding: 12px; border-radius: 8px; font-size: 0.85rem; font-weight: bold; margin-top: 10px; width: 100%; text-align: center; box-sizing: border-box; }
+        .btn-status { width: 100%; padding: 12px; border: none; border-radius: 10px; margin-top: 10px; font-weight: bold; background: #E5E5EA; transition: 0.3s; font-size: 0.9rem; }
         .btn-status.done { background: var(--apple-green); color: white; }
-        .btn-pdf { width: 100%; padding: 15px; background: #000; color: white; border-radius: 12px; font-weight: bold; margin-top: 10px; }
+        .btn-pdf { width: 100%; padding: 15px; background: #000; color: white; border-radius: 12px; font-weight: bold; margin-top: 10px; border: none; }
     </style>
 </head>
 <body>
@@ -31,21 +31,22 @@
         <span style="color: var(--apple-yellow);">🟡 <span id="c-todo">0</span></span>
     </div>
     <input type="text" id="busca" class="search-box" placeholder="🔍 Buscar nome ou número..." oninput="render()">
-    <button onclick="gerarPDF()" class="btn-pdf">📄 Gerar Relatório de Ocorrências</button>
+    <button onclick="gerarPDF()" class="btn-pdf">📄 Gerar Relatório PDF</button>
 </div>
 
 <div id="app-lista"></div>
 
 <script>
+// DADOS REVISADOS E CORRIGIDOS (ORDEM DO ROTEIRO)
 const baseConfig = [
     // VARGEM GRANDE
     {id: 12, nome: "EDSON INOCENCIO FERREIRA", c: "Vargem Grande", gps: "-20.471300, -42.018783", link: "1z5qsMNQm_pYc6kmIpMUbNATgiLMiZBmZ"},
     {id: 13, nome: "EDUARDO EMERICK SOARES", c: "Vargem Grande", gps: "-20.470644, -42.012942", link: "1E7Zx4QPWkkYyJy8T7b5pXsUdTbWOT30u"},
     {id: 05, nome: "BRENO FERREIRA DA SILVA", c: "Vargem Grande", gps: "-20.405522, -41.895681", link: "1WCiJEKnbwSKvxKSWMA-xnM1_e1U1EfEr"},
-    {id: 14, nome: "ELCEDIR COSTA FOCA DE OLIVEIRA", c: "Vargem Grande", gps: "-20.471108, -42.001172", link: "1tVkBonTfmWJ6MF8QBhc_XBgLb3MmDyyq"},
+    {id: 14, nome: "ELCEDIR COSTA FOCA DDE OLIVEIRA", c: "Vargem Grande", gps: "-20.471108, -42.001172", link: "1tVkBonTfmWJ6MF8QBhc_XBgLb3MmDyyq"},
     {id: 16, nome: "EMELY CAROLAYNE CORREA DE SOUZA", c: "Vargem Grande", gps: "-20.470664, -42.001447", link: "1tOYtt2vcdTjujXtsYBAVTJURLN4EkEoI"},
     {id: 17, nome: "FERNANDO DE ASSUNÇÃO QUEIROZ", c: "Vargem Grande", gps: "-20.482092, -42.020036", link: "1MDiN2UFxhHW3Jt5krYVF-TGIAbeJN8EM"},
-    {id: 18, nome: "FRANCIELE PEREIRA FARIA VIEIRA", c: "Vargem Grande", gps: "-20.488208, -42.022181", link: "1YtIog_gShGgx433ixN-opKmovQklMseU"},
+    {id: 18, nome: "FRANCIELE PEREIRA FARIA VIERA", c: "Vargem Grande", gps: "-20.488208, -42.022181", link: "1YtIog_gShGgx433ixN-opKmovQklMseU"},
     {id: 20, nome: "GILSON GARCIAS DA ROZA JUNIOR", c: "Vargem Grande", gps: "-20.468914, -42.012203", link: "1ztSu5FDFNbMW0k6093L1AtG8lrL_WBjy"},
     {id: 22, nome: "HUGO FERNANDES MIRANDA", c: "Vargem Grande", gps: "-20.466894, -42.015106", link: "1Px_cYIj5dfS-hbdqlxZ8NuZ5Ko4Mkb-d"},
     {id: 25, nome: "LARISSA FARIA BARROSO", c: "Vargem Grande", gps: "-20.485300, -42.029275", link: "16DCAKh5ut6kSLjOQyTSb1a-NZrx_TtGq"},
@@ -67,18 +68,18 @@ const baseConfig = [
     // BOA SORTE
     {id: 10, nome: "DERCIO JOSE DE SOUZA", c: "Boa Sorte", gps: "-20.437164, -41.944783", link: "1KQNeIhBdwnhZsF2KGoheKlPSKaCxYaGH"},
     // INDALASSU
-    {id: 24, nome: "JAQUELINE DE OLIVEIRA B. GARCIA", c: "Indalassu", gps: "-20.472611, -42.013028", link: "1Gm52w90V460vmslyy9aXvPlyg2lTRMiU"},
+    {id: 24, nome: "JAQUELINE DE OLIVEIRA B, GARCIA", c: "Indalassu", gps: "-20.472611, -42.013028", link: "1Gm52w90V460vmslyy9aXvPlyg2lTRMiU"},
     {id: 47, nome: "WARLEY BORGES DA ROZA", c: "Indalassu", gps: "-20.470656, -42.011811", link: "1UKAf9qhZJAOWo7Z6COUU_zZeOwzhfRxE"},
     // VISTA ALEGRE
-    {id: 07, nome: "CAROLINA DAS GRAÇAS DE O. VIEIRA", c: "Vista Alegre", gps: "-20.437328, -41.947931", link: "1WM_z5nZG-UgrzzamtoXN08hIYRLRY2mv"},
+    {id: 07, nome: "CAROLINA DAS GRAÇAS DE O, VIEIRA", c: "Vista Alegre", gps: "-20.437328, -41.947931", link: "1WM_z5nZG-UgrzzamtoXN08hIYRLRY2mv"},
     // SANTO AUGUSTINHO
     {id: 09, nome: "DENIVAL WERNER", c: "Santo Augustinho", gps: "-20.436397, -41.929142", link: "18z_8PPY-ZEijtgp-GJ5RsGU3afbgyf_4"},
     // TAVARES
     {id: 03, nome: "ANA MARIA DE FREITAS", c: "Tavares", gps: "-20.430344, -41.923678", link: "1k2-qrHDz5m7yl6pYGb-vRGkdv6PRoDRR"},
     // JOSÉ PEDRO
     {id: 04, nome: "ANGELICA DA SILVA MARTINS", c: "José Pedro", gps: "-20.382497, -41.860444", link: "18QKVWIvos9uUTjJmAQoqlE9cnMqkmTIz"},
-    {id: 08, nome: "DANIELA MARCOLINO DE O. FARIA", c: "José Pedro", gps: "-20.390806, -41.864278", link: "1k3-TBlFVokDYCt1oIh5fJZEDQQGMdV_u"},
-    {id: 11, nome: "DIRICINEIA FERREIRA DE A. CAMARA", c: "José Pedro", gps: "-20.388386, -41.870819", link: "1Qk5KOOUA0G9REuTcuPE41NrTJftMxuTs"},
+    {id: 08, nome: "DANIELA MARCOLINO DE O, FARIA", c: "José Pedro", gps: "-20.390806, -41.864278", link: "1k3-TBlFVokDYCt1oIh5fJZEDQQGMdV_u"},
+    {id: 11, nome: "DIRICINEIA FERREIRA DE A, CAMARA", c: "José Pedro", gps: "-20.388386, -41.870819", link: "1Qk5KOOUA0G9REuTcuPE41NrTJftMxuTs"},
     {id: 32, nome: "MARLI OSORIO DOS SANTOS", c: "José Pedro", gps: "-20.480475, -41.986189", link: "1WGtzbbJy526ty1apCNTSxA7jUsFJgVzF"},
     {id: 34, nome: "RAQUEL COSTA OLIVEIRA SILVA", c: "José Pedro", gps: "-20.377531, -41.862439", link: "1hzYE-SiZMei5_-8VrhyV7SvV2FtzlPuW"},
     {id: 37, nome: "RICARDO CUSTODIO DA SILVA", c: "José Pedro", gps: "-20.382275, -41.862344", link: "1_iwnI4qWPxef9CnEn3tMutIoPstdM1Re"},
@@ -86,7 +87,7 @@ const baseConfig = [
     // JACUTINGA
     {id: 02, nome: "ALINE FERNANDES ESTANECK", c: "Jacutinga", gps: "-20.408042, -41.987086", link: "1FFzVG3g7TvRF79JXSPZtL_oMgvg0C6Fa"},
     {id: 15, nome: "ELENICE CORREA SILVEIRA", c: "Jacutinga", gps: "-20.410753, -41.915331", link: "1igsU58i84aLmyAnz28D6LwhGeKw20DAC"},
-    {id: 19, nome: "GABRIELA ALVES DE A. FONSECA", c: "Jacutinga", gps: "-20.382789, -41.909478", link: "1kIgHdIrwf8z2odnVb1BYQC7sDzzrokE0"},
+    {id: 19, nome: "GABRIELA ALVES DE A, FONSECA", c: "Jacutinga", gps: "-20.382789, -41.909478", link: "1kIgHdIrwf8z2odnVb1BYQC7sDzzrokE0"},
     {id: 23, nome: "IGOR PORTUGAL CORREA", c: "Jacutinga", gps: "-20.402344, -41.964047", link: "1-vzV70KDTU0s5lg1sN12GPifDUbHAX2Z"},
     {id: 27, nome: "LUANA MAGESTE SINDRA CAETANO", c: "Jacutinga", gps: "-20.471722, -41.900494", link: "1l-zDADRFLE3RUDnZalFX15ist-ku33w9"},
     {id: 29, nome: "LUCY STANECK CORREA", c: "Jacutinga", gps: "-20.459236, -41.978158", link: "1IfohuqDGvoo3WJJTjurKpL8ubcGMIerq"},
@@ -99,27 +100,26 @@ const baseConfig = [
     {id: 30, nome: "MARCOS ANTONIO CESAR", c: "Poço Danta", gps: "-20.469950, -42.003231", link: "1Jl8psQwL-7PZi7hePQXCVNbszMecvTX2"}
 ];
 
-function getDB() {
-    const s = localStorage.getItem('db_final_v5');
+function init() {
+    let s = localStorage.getItem('v5_1_db');
     if(!s) {
-        const d = baseConfig.map(x => ({...x, status: 'pendente', obs: ''}));
-        localStorage.setItem('db_final_v5', JSON.stringify(d));
-        return d;
+        let d = baseConfig.map(x => ({...x, status: 'pendente', obs: ''}));
+        localStorage.setItem('v5_1_db', JSON.stringify(d));
     }
-    return JSON.parse(s);
+    render();
 }
 
 function salvarItem(id, c, v) {
-    let d = JSON.parse(localStorage.getItem('db_final_v5'));
+    let d = JSON.parse(localStorage.getItem('v5_1_db'));
     d[d.findIndex(i => i.id === id)][c] = v;
-    localStorage.setItem('db_final_v5', JSON.stringify(d));
+    localStorage.setItem('v5_1_db', JSON.stringify(d));
     if(c === 'status') render();
 }
 
 function render() {
     const l = document.getElementById('app-lista');
     const q = document.getElementById('busca').value.toLowerCase();
-    const d = JSON.parse(localStorage.getItem('db_final_v5'));
+    const d = JSON.parse(localStorage.getItem('v5_1_db'));
     let h = '', last = '', ok = 0;
 
     d.forEach(u => {
@@ -135,11 +135,10 @@ function render() {
             <div class="card ${u.status}">
                 <span class="id-badge">#${u.id.toString().padStart(2, '0')}</span>
                 <a class="name-link" href="https://www.google.com/maps/search/?api=1&query=${u.gps}" target="_blank">${u.nome}</a>
-                <small style="color:#666">${u.gps}</small>
                 
-                <textarea placeholder="Ocorrências da medição..." onchange="salvarItem(${u.id}, 'obs', this.value)">${u.obs}</textarea>
+                <textarea placeholder="Digitar ocorrências..." onchange="salvarItem(${u.id}, 'obs', this.value)">${u.obs}</textarea>
                 
-                <a class="drive-btn" href="https://drive.google.com/drive/folders/${u.link}" target="_blank">📂 ABRIR PASTA DE FOTOS</a>
+                <a class="drive-btn" href="https://drive.google.com/drive/folders/${u.link}" target="_blank">📂 PASTA DE FOTOS (DRIVE)</a>
 
                 <button class="btn-status ${u.status === 'concluido' ? 'done' : ''}" onclick="toggleStatus(${u.id})">
                     ${u.status === 'concluido' ? '✅ VISITADO' : 'MARCAR COMO VISITADO'}
@@ -153,38 +152,36 @@ function render() {
 }
 
 function toggleStatus(id) {
-    let d = JSON.parse(localStorage.getItem('db_final_v5'));
+    let d = JSON.parse(localStorage.getItem('v5_1_db'));
     let i = d.findIndex(x => x.id === id);
     d[i].status = d[i].status === 'pendente' ? 'concluido' : 'pendente';
-    localStorage.setItem('db_final_v5', JSON.stringify(d));
+    localStorage.setItem('v5_1_db', JSON.stringify(d));
     render();
 }
 
-async function gerarPDF() {
+function gerarPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    const d = JSON.parse(localStorage.getItem('db_final_v5'));
+    const d = JSON.parse(localStorage.getItem('v5_1_db'));
     let y = 20;
 
-    doc.setFontSize(16);
-    doc.text("Relatório de Campo - Engenharia", 15, 15);
+    doc.setFontSize(14);
+    doc.text("Relatório Engenharia - Vistorias de Campo", 15, 15);
     doc.setFontSize(10);
 
     d.forEach(u => {
-        if(y > 270) { doc.addPage(); y = 20; }
+        if(y > 275) { doc.addPage(); y = 20; }
         doc.setFont(undefined, 'bold');
         doc.text(`#${u.id} - ${u.nome} (${u.status.toUpperCase()})`, 15, y);
         y += 6;
         doc.setFont(undefined, 'normal');
-        doc.text(`Local: ${u.c} | GPS: ${u.gps}`, 15, y);
-        y += 6;
-        doc.text(`Ocorrências: ${u.obs || 'Nenhuma'}`, 15, y);
-        y += 12;
+        doc.text(`Local: ${u.c} | Ocorrências: ${u.obs || 'Nenhuma'}`, 15, y);
+        y += 10;
     });
-    doc.save("vistorias.pdf");
+    doc.save("vistorias_campo.pdf");
 }
 
-window.onload = render;
+window.onload = init;
 </script>
 </body>
 </html>
