@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Engenharia Campo v7.5</title>
+    <title>Engenharia Campo v8.0 - Roteiro</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        :root { --apple-blue: #007AFF; --apple-green: #34C759; --apple-bg: #F2F2F7; }
+        :root { --apple-blue: #007AFF; --apple-green: #34C759; --apple-bg: #F2F2F7; --apple-red: #FF3B30; }
         body { font-family: -apple-system, sans-serif; margin: 0; padding: 10px; background: var(--apple-bg); padding-bottom: 120px; }
         
-        /* Dashboard Estilizado */
         .dashboard { background: white; padding: 15px; border-radius: 15px; position: sticky; top: 10px; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 15px; }
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
         .stat-card { background: #f8f8f8; padding: 10px; border-radius: 10px; text-align: center; border: 1px solid #eee; }
@@ -18,13 +17,12 @@
         
         .search-box { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ccc; font-size: 16px; margin-bottom: 10px; box-sizing: border-box; }
         
-        /* Cards */
         .card { background: white; margin-bottom: 12px; border-radius: 14px; padding: 15px; border-left: 6px solid #FFCC00; position: relative; }
-        .card.concluido { border-left-color: var(--apple-green); background: #f9fff9; }
+        .card.concluido { border-left-color: var(--apple-green); background: #f9fff9; opacity: 0.8; }
         
         .btn-gps { 
             float: right; background: var(--apple-blue); color: white; border: none; 
-            padding: 8px 14px; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 12px;
+            padding: 10px 16px; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 12px;
             box-shadow: 0 2px 5px rgba(0,122,255,0.3);
         }
         
@@ -33,10 +31,11 @@
         
         textarea { width: 100%; border-radius: 8px; border: 1px solid #ddd; padding: 10px; margin-top: 10px; box-sizing: border-box; font-size: 14px; min-height: 70px; resize: none; }
         
-        .btn-status { width: 100%; padding: 14px; border: none; border-radius: 10px; margin-top: 10px; font-weight: bold; background: #E5E5EA; font-size: 15px; transition: 0.2s; }
+        .btn-status { width: 100%; padding: 14px; border: none; border-radius: 10px; margin-top: 10px; font-weight: bold; background: #E5E5EA; font-size: 15px; }
         .btn-status.done { background: var(--apple-green); color: white; }
         
-        .btn-pdf { width: 100%; padding: 12px; background: #000; color: white; border-radius: 10px; font-weight: bold; border: none; }
+        .btn-pdf { width: 100%; padding: 12px; background: #000; color: white; border-radius: 10px; font-weight: bold; border: none; margin-bottom: 5px; }
+        .btn-reset { width: 100%; padding: 8px; background: transparent; color: var(--apple-red); border: none; font-size: 11px; font-weight: bold; }
         .time-badge { background: #555; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-bottom: 5px; display: inline-block;}
     </style>
 </head>
@@ -46,81 +45,84 @@
     <div class="stats-grid">
         <div class="stat-card">
             <span id="progresso-cont" class="stat-value">0/47</span>
-            <span class="stat-label">Concluídos</span>
+            <span class="stat-label">Vistorias</span>
         </div>
         <div class="stat-card">
             <span id="progresso-pct" class="stat-value">0%</span>
-            <span class="stat-label">Progresso</span>
+            <span class="stat-label">Concluído</span>
         </div>
     </div>
-    <input type="text" id="busca" class="search-box" placeholder="🔍 Buscar nome, ID ou comunidade..." oninput="render()">
-    <button onclick="gerarPDF()" class="btn-pdf">📄 Gerar Relatório PDF</button>
+    <input type="text" id="busca" class="search-box" placeholder="🔍 Buscar nome ou local..." oninput="render()">
+    <button onclick="gerarPDF()" class="btn-pdf">📄 Gerar Relatório Final PDF</button>
+    <button onclick="resetar()" class="btn-reset">⚠️ LIMPAR TODOS OS DADOS</button>
 </div>
 
 <div id="app-lista"></div>
 
 <script>
-const listaMestre = [
-    {id: 1, nome: "Alex Estaneck Coelho", c: "Capim Roxo", lat: -20.484689, lon: -41.995542},
-    {id: 2, nome: "Aline Fernandes Estaneck", c: "Jacutinga", lat: -20.408042, lon: -41.995419},
-    {id: 3, nome: "Ana Maria de Freitas", c: "Tavares", lat: -20.430344, lon: -41.923678},
-    {id: 4, nome: "Angelica dos Santos Martins Miranda", c: "Jose Pedro", lat: -20.382497, lon: -41.857667},
-    {id: 5, nome: "Breno Ferreira da Silva", c: "Vargem Grande", lat: -20.405522, lon: -41.895681},
-    {id: 6, nome: "Bruno Ferreira Andrade", c: "Poco Danta", lat: -20.471911, lon: -42.011447},
-    {id: 7, nome: "Carolina das Graças de Oliveira", c: "Vista Alegre", lat: -20.437328, lon: -41.942375},
-    {id: 8, nome: "Daniela Marcolino de Oliveira Faria", c: "Jose Pedro", lat: -20.390806, lon: -41.864303},
-    {id: 9, nome: "Denival Werner", c: "Santo Augustinho", lat: -20.447508, lon: -41.929142},
-    {id: 10, nome: "Dercio Jose de Souza", c: "Boa Sorte", lat: -20.437164, lon: -41.944783},
-    {id: 11, nome: "Dirceneia Ferreira de Almeida Canara", c: "Jose Pedro", lat: -20.391164, lon: -41.868042},
-    {id: 12, nome: "Edson Inocencio Ferreira", c: "Vargem Grande", lat: -20.482411, lon: -42.018783},
-    {id: 13, nome: "Eduardo Emerick Soares", c: "Vargem Grande", lat: -20.470644, lon: -42.012942},
-    {id: 14, nome: "Elcedir Costa Foca de Oliveira", c: "Vargem Grande", lat: -20.477764, lon: -42.001172},
-    {id: 15, nome: "Elenice Correa Silveira", c: "Jacutinga", lat: -20.410753, lon: -41.915331},
-    {id: 16, nome: "Emely Carolayne Correa de Souza", c: "Vargem Grande", lat: -20.470664, lon: -42.014458},
-    {id: 17, nome: "Fernando de Assunção Queiroz", c: "Vargem Grande", lat: -20.482092, lon: -42.025592},
-    {id: 18, nome: "Franciele Pereira Faria Vieira", c: "Vargem Grande", lat: -20.491542, lon: -42.027736},
-    {id: 19, nome: "Gabriela Alves de Almeida Fonseca", c: "Jacutinga", lat: -20.399456, lon: -41.909478},
-    {id: 20, nome: "Gilson Garcias da Roza Junior", c: "Vargem Grande", lat: -20.472247, lon: -42.012203},
-    {id: 21, nome: "Gisele Correa Vaz", c: "Boa Esperanca", lat: -20.410994, lon: -41.915161},
+// A lista foi REORDENADA GEOGRAFICAMENTE: Inicia Sul (Vargem Grande) -> Termina Norte (Jacutinga)
+const roteiroOtimizado = [
     {id: 22, nome: "Hugo Fernandes Miranda", c: "Vargem Grande", lat: -20.470228, lon: -42.015106},
-    {id: 23, nome: "Igor Portugal Correa", c: "Jacutinga", lat: -20.402344, lon: -41.964047},
-    {id: 24, nome: "Jaqueline de Oliveira B. Garcias", c: "Indalassu", lat: -20.472611, lon: -42.013028},
-    {id: 25, nome: "Larissa Faria Barroso", c: "Vargem Grande", lat: -20.490856, lon: -42.029275},
-    {id: 26, nome: "Leticia de Souza M. Azevedo", c: "Vista Bela", lat: -20.479083, lon: -41.961775},
-    {id: 27, nome: "Luana Mageste S. C. Brum", c: "Jacutinga", lat: -20.430056, lon: -41.900494},
-    {id: 28, nome: "Lucas Tarden dos Santos", c: "Vargem Grande", lat: -20.489583, lon: -42.022564},
-    {id: 29, nome: "Lucy Staneck Correa", c: "Jacutinga", lat: -20.459236, lon: -41.978714},
-    {id: 30, nome: "Marcos Antonio Cesar", c: "Poco Danta", lat: -20.470000, lon: -41.987119},
-    {id: 31, nome: "Mariane Viana da Roza", c: "Vargem Grande", lat: -20.472269, lon: -42.012564},
-    {id: 32, nome: "Marli Osorio dos Santos", c: "Jose Pedro", lat: -20.480475, lon: -41.996744},
-    {id: 33, nome: "Pamela Borel dos Santos Silva", c: "Jacutinga", lat: -20.406397, lon: -41.898014},
-    {id: 34, nome: "Raquel Costa Oliveira Silva", c: "Jose Pedro", lat: -20.377531, lon: -41.862439},
-    {id: 35, nome: "Rean Braz de Oliveira Lima", c: "Vargem Grande", lat: -20.480383, lon: -41.996536},
-    {id: 36, nome: "Reginaldo Silvestre dos Santos", c: "Vargem Grande", lat: -20.488497, lon: -42.024856},
-    {id: 37, nome: "Ricardo Custodio da Silva", c: "Jose Pedro", lat: -20.382275, lon: -41.863456},
-    {id: 38, nome: "Sabrina Salim Roque", c: "Jacutinga", lat: -20.403358, lon: -41.964608},
-    {id: 39, nome: "Sebastião Barroso", c: "Vargem Grande", lat: -20.486692, lon: -42.030669},
+    {id: 16, nome: "Emely Carolayne Correa de Souza", c: "Vargem Grande", lat: -20.470664, lon: -42.014458},
     {id: 40, nome: "Sebastião dos Santos Ramos", c: "Vargem Grande", lat: -20.472664, lon: -42.013878},
-    {id: 41, nome: "Silvina de Fatima Pacheco", c: "Jacutinga", lat: -20.387678, lon: -41.912203},
-    {id: 42, nome: "Tatiane Marques Santos", c: "Vargem Grande", lat: -20.489842, lon: -42.034542},
+    {id: 24, nome: "Jaqueline de Oliveira B. Garcias", c: "Indalassu", lat: -20.472611, lon: -42.013028},
+    {id: 13, nome: "Eduardo Emerick Soares", c: "Vargem Grande", lat: -20.470644, lon: -42.012942},
     {id: 43, nome: "Vanessa Carla Cesar da Roza", c: "Vargem Grande", lat: -20.473467, lon: -42.012614},
-    {id: 44, nome: "Veronica da Silva Dionisio", c: "Jose Pedro", lat: -20.409428, lon: -41.939453},
-    {id: 45, nome: "Vilma Aparecida dos Santos", c: "Jacutinga", lat: -20.490669, lon: -42.022050},
+    {id: 31, nome: "Mariane Viana da Roza", c: "Vargem Grande", lat: -20.472269, lon: -42.012564},
+    {id: 20, nome: "Gilson Garcias da Roza Junior", c: "Vargem Grande", lat: -20.472247, lon: -42.012203},
+    {id: 47, nome: "Warley Borges da Roza", c: "Indalassu", lat: -20.470656, lon: -42.011811},
     {id: 46, nome: "Wallace Borges da Roza", c: "Vargem Grande", lat: -20.470725, lon: -42.011567},
-    {id: 47, nome: "Warley Borges da Roza", c: "Indalassu", lat: -20.470656, lon: -42.011811}
+    {id: 6, nome: "Bruno Ferreira Andrade", c: "Poco Danta", lat: -20.471911, lon: -42.011447},
+    {id: 12, nome: "Edson Inocencio Ferreira", c: "Vargem Grande", lat: -20.482411, lon: -42.018783},
+    {id: 17, nome: "Fernando de Assunção Queiroz", c: "Vargem Grande", lat: -20.482092, lon: -42.025592},
+    {id: 36, nome: "Reginaldo Silvestre dos Santos", c: "Vargem Grande", lat: -20.488497, lon: -42.024856},
+    {id: 28, nome: "Lucas Tarden dos Santos", c: "Vargem Grande", lat: -20.489583, lon: -42.022564},
+    {id: 45, nome: "Vilma Aparecida dos Santos", c: "Jacutinga", lat: -20.490669, lon: -42.022050},
+    {id: 18, nome: "Franciele Pereira Faria Vieira", c: "Vargem Grande", lat: -20.491542, lon: -42.027736},
+    {id: 25, nome: "Larissa Faria Barroso", c: "Vargem Grande", lat: -20.490856, lon: -42.029275},
+    {id: 39, nome: "Sebastião Barroso", c: "Vargem Grande", lat: -20.486692, lon: -42.030669},
+    {id: 42, nome: "Tatiane Marques Santos", c: "Vargem Grande", lat: -20.489842, lon: -42.034542},
+    {id: 14, nome: "Elcedir Costa Foca de Oliveira", c: "Vargem Grande", lat: -20.477764, lon: -42.001172},
+    {id: 32, nome: "Marli Osorio dos Santos", c: "Jose Pedro", lat: -20.480475, lon: -41.996744},
+    {id: 35, nome: "Rean Braz de Oliveira Lima", c: "Vargem Grande", lat: -20.480383, lon: -41.996536},
+    {id: 1, nome: "Alex Estaneck Coelho", c: "Capim Roxo", lat: -20.484689, lon: -41.995542},
+    {id: 30, nome: "Marcos Antonio Cesar", c: "Poco Danta", lat: -20.470000, lon: -41.987119},
+    {id: 29, nome: "Lucy Staneck Correa", c: "Jacutinga", lat: -20.459236, lon: -41.978714},
+    {id: 26, nome: "Leticia de Souza M. Azevedo", c: "Vista Bela", lat: -20.479083, lon: -41.961775},
+    {id: 23, nome: "Igor Portugal Correa", c: "Jacutinga", lat: -20.402344, lon: -41.964047},
+    {id: 38, nome: "Sabrina Salim Roque", c: "Jacutinga", lat: -20.403358, lon: -41.964608},
+    {id: 10, nome: "Dercio Jose de Souza", c: "Boa Sorte", lat: -20.437164, lon: -41.944783},
+    {id: 7, nome: "Carolina das Graças de Oliveira", c: "Vista Alegre", lat: -20.437328, lon: -41.942375},
+    {id: 44, nome: "Veronica da Silva Dionisio", c: "Jose Pedro", lat: -20.409428, lon: -41.939453},
+    {id: 9, nome: "Denival Werner", c: "Santo Augustinho", lat: -20.447508, lon: -41.929142},
+    {id: 3, nome: "Ana Maria de Freitas", c: "Tavares", lat: -20.430344, lon: -41.923678},
+    {id: 15, nome: "Elenice Correa Silveira", c: "Jacutinga", lat: -20.410753, lon: -41.915331},
+    {id: 21, nome: "Gisele Correa Vaz", c: "Boa Esperanca", lat: -20.410994, lon: -41.915161},
+    {id: 41, nome: "Silvina de Fatima Pacheco", c: "Jacutinga", lat: -20.387678, lon: -41.912203},
+    {id: 19, nome: "Gabriela Alves de Almeida Fonseca", c: "Jacutinga", lat: -20.399456, lon: -41.909478},
+    {id: 27, nome: "Luana Mageste S. C. Brum", c: "Jacutinga", lat: -20.430056, lon: -41.900494},
+    {id: 33, nome: "Pamela Borel dos Santos Silva", c: "Jacutinga", lat: -20.406397, lon: -41.898014},
+    {id: 5, nome: "Breno Ferreira da Silva", c: "Vargem Grande", lat: -20.405522, lon: -41.895681},
+    {id: 11, nome: "Dirceneia Ferreira de Almeida Canara", c: "Jose Pedro", lat: -20.391164, lon: -41.868042},
+    {id: 8, nome: "Daniela Marcolino de Oliveira Faria", c: "Jose Pedro", lat: -20.390806, lon: -41.864303},
+    {id: 37, nome: "Ricardo Custodio da Silva", c: "Jose Pedro", lat: -20.382275, lon: -41.863456},
+    {id: 34, nome: "Raquel Costa Oliveira Silva", c: "Jose Pedro", lat: -20.377531, lon: -41.862439},
+    {id: 4, nome: "Angelica dos Santos Martins Miranda", c: "Jose Pedro", lat: -20.382497, lon: -41.857667},
+    {id: 2, nome: "Aline Fernandes Estaneck", c: "Jacutinga", lat: -20.408042, lon: -41.995419}
 ];
 
 function init() {
-    let db = localStorage.getItem('v75_db');
+    let db = localStorage.getItem('v80_db');
     if(!db) {
-        const setup = listaMestre.map(item => ({...item, status: 'pendente', obs: '', ts: 0}));
-        localStorage.setItem('v75_db', JSON.stringify(setup));
+        // Inicializa com o roteiro otimizado
+        const setup = roteiroOtimizado.map(item => ({...item, status: 'pendente', obs: '', ts: 0}));
+        localStorage.setItem('v80_db', JSON.stringify(setup));
     }
     render();
 }
 
 function toggle(id) {
-    let db = JSON.parse(localStorage.getItem('v75_db'));
+    let db = JSON.parse(localStorage.getItem('v80_db'));
     let idx = db.findIndex(x => x.id === id);
     if(db[idx].status === 'pendente') {
         db[idx].status = 'concluido';
@@ -129,87 +131,51 @@ function toggle(id) {
         db[idx].status = 'pendente';
         db[idx].ts = 0;
     }
-    localStorage.setItem('v75_db', JSON.stringify(db));
+    localStorage.setItem('v80_db', JSON.stringify(db));
     render();
 }
 
 function salvarObs(id, texto) {
-    let db = JSON.parse(localStorage.getItem('v75_db'));
+    let db = JSON.parse(localStorage.getItem('v80_db'));
     let idx = db.findIndex(x => x.id === id);
     db[idx].obs = texto;
-    localStorage.setItem('v75_db', JSON.stringify(db));
+    localStorage.setItem('v80_db', JSON.stringify(db));
 }
 
 function render() {
     const container = document.getElementById('app-lista');
     const txt = document.getElementById('busca').value.toLowerCase();
-    let db = JSON.parse(localStorage.getItem('v75_db'));
+    let db = JSON.parse(localStorage.getItem('v80_db'));
 
-    // Atualiza Dashboard
+    // Estatísticas
     const total = db.length;
     const feitos = db.filter(x => x.status === 'concluido').length;
     document.getElementById('progresso-cont').innerText = `${feitos}/${total}`;
     document.getElementById('progresso-pct').innerText = `${Math.round((feitos/total)*100)}%`;
 
-    // Ordenação
+    // A mágica: Se não houver busca, mantém a ORDEM DO ROTEIRO
+    // Os concluídos descem para o fim da lista conforme você marca
     db.sort((a, b) => {
         if (a.status === 'concluido' && b.status === 'concluido') return a.ts - b.ts;
         if (a.status === 'concluido') return 1;
         if (b.status === 'concluido') return -1;
-        return a.nome.localeCompare(b.nome);
+        // Mantém a ordem do array roteiroOtimizado para os pendentes
+        return roteiroOtimizado.findIndex(x => x.id === a.id) - roteiroOtimizado.findIndex(x => x.id === b.id);
     });
 
     let html = '';
     db.forEach(u => {
-        if(!u.nome.toLowerCase().includes(txt) && !u.c.toLowerCase().includes(txt) && u.id.toString() !== txt) return;
+        if(!u.nome.toLowerCase().includes(txt) && !u.c.toLowerCase().includes(txt)) return;
         
         let horaFormatada = u.ts > 0 ? new Date(u.ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
-        // Link Universal de Mapas (Geo)
-        let urlGps = `https://www.google.com/maps/search/?api=1&query=${u.lat},${u.lon}`;
+        let urlGps = `https://www.google.com/maps/dir/?api=1&destination=${u.lat},${u.lon}&travelmode=driving`;
 
         html += `
             <div class="card ${u.status}">
                 <a href="${urlGps}" target="_blank" class="btn-gps">📍 MAPA</a>
-                ${u.ts > 0 ? `<span class="time-badge">VISITADO: ${horaFormatada}</span>` : ''}
+                ${u.ts > 0 ? `<span class="time-badge">CONCLUÍDO ÀS ${horaFormatada}</span>` : ''}
                 <span class="name-link">#${u.id} - ${u.nome.toUpperCase()}</span>
                 <span class="comunidade">${u.c}</span>
-                <textarea placeholder="Relatório da vistoria..." oninput="salvarObs(${u.id}, this.value)">${u.obs}</textarea>
+                <textarea placeholder="Ocorrências..." oninput="salvarObs(${u.id}, this.value)">${u.obs}</textarea>
                 <button class="btn-status ${u.status === 'concluido' ? 'done' : ''}" onclick="toggle(${u.id})">
-                    ${u.status === 'concluido' ? '✅ VISTORIA OK' : 'MARCAR COMO VISITADO'}
-                </button>
-            </div>
-        `;
-    });
-    container.innerHTML = html;
-}
-
-function gerarPDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    let db = JSON.parse(localStorage.getItem('v75_db'));
-    let visitados = db.filter(x => x.status === 'concluido').sort((a,b) => a.ts - b.ts);
-    
-    doc.setFontSize(16);
-    doc.text("RELATÓRIO DE VISTORIAS", 15, 20);
-    doc.setFontSize(10);
-    doc.text(`Total Concluído: ${visitados.length} de ${db.length}`, 15, 28);
-    
-    let y = 40;
-    visitados.forEach((u, i) => {
-        if(y > 260) { doc.addPage(); y = 25; }
-        let h = new Date(u.ts).toLocaleTimeString();
-        doc.setFont(undefined, 'bold');
-        doc.text(`${i+1}. #${u.id} - ${u.nome}`, 15, y);
-        doc.setFont(undefined, 'normal');
-        doc.text(`Hora: ${h} | Comunidade: ${u.c}`, 15, y+5);
-        let obs = doc.splitTextToSize(`Obs: ${u.obs || 'Nenhuma'}`, 170);
-        doc.text(obs, 15, y+10);
-        y += 15 + (obs.length * 5);
-    });
-    doc.save("vistorias_final.pdf");
-}
-
-window.onload = init;
-</script>
-</body>
-</html>
+                    ${u.status
