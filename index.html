@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Engenharia Campo v8.1 - Offline Ready</title>
+    <title>Engenharia Campo v8.2 - Fix</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root { --apple-blue: #007AFF; --apple-green: #34C759; --apple-bg: #F2F2F7; --apple-red: #FF3B30; --apple-gold: #FFCC00; }
@@ -17,25 +17,20 @@
         
         .search-box { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ccc; font-size: 16px; margin-bottom: 10px; box-sizing: border-box; outline: none; }
         
-        .card { background: white; margin-bottom: 12px; border-radius: 14px; padding: 15px; border-left: 6px solid var(--apple-gold); position: relative; transition: 0.3s; }
+        .card { background: white; margin-bottom: 12px; border-radius: 14px; padding: 15px; border-left: 6px solid var(--apple-gold); position: relative; display: block !important; }
         .card.concluido { border-left-color: var(--apple-green); background: #f9fff9; opacity: 0.8; }
         
-        .btn-gps { 
-            float: right; background: var(--apple-blue); color: white; border: none; 
-            padding: 10px 16px; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 12px;
-            box-shadow: 0 2px 5px rgba(0,122,255,0.3);
-        }
-        
-        .name-link { color: #1c1c1e; font-size: 1.1rem; font-weight: 700; display: block; margin-top: 5px; max-width: 70%; }
+        .btn-gps { float: right; background: var(--apple-blue); color: white; border: none; padding: 10px 16px; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 12px; }
+        .name-link { color: #1c1c1e; font-size: 1.1rem; font-weight: 700; display: block; margin-top: 5px; width: 70%; }
         .comunidade { color: #8e8e93; font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 8px; }
         
         textarea { width: 100%; border-radius: 8px; border: 1px solid #ddd; padding: 10px; margin-top: 10px; box-sizing: border-box; font-size: 14px; min-height: 70px; resize: none; background: #fafafa; }
         
-        .btn-status { width: 100%; padding: 14px; border: none; border-radius: 10px; margin-top: 10px; font-weight: bold; background: #E5E5EA; font-size: 15px; cursor: pointer; }
+        .btn-status { width: 100%; padding: 14px; border: none; border-radius: 10px; margin-top: 10px; font-weight: bold; background: #E5E5EA; font-size: 15px; }
         .btn-status.done { background: var(--apple-green); color: white; }
         
-        .btn-pdf { width: 100%; padding: 12px; background: #000; color: white; border-radius: 10px; font-weight: bold; border: none; font-size: 14px; }
-        .btn-reset { width: 100%; padding: 8px; background: transparent; color: var(--apple-red); border: none; font-size: 11px; font-weight: bold; margin-top: 5px; }
+        .btn-pdf { width: 100%; padding: 12px; background: #000; color: white; border-radius: 10px; font-weight: bold; border: none; margin-bottom: 5px; }
+        .btn-reset { width: 100%; padding: 8px; background: transparent; color: var(--apple-red); border: none; font-size: 11px; font-weight: bold; }
         .time-badge { background: #555; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-bottom: 5px; display: inline-block;}
     </style>
 </head>
@@ -47,26 +42,20 @@
             <span id="progresso-cont" class="stat-value">0/47</span>
             <span class="stat-label">Vistorias</span>
         </div>
-        <div class="stat-card" id="card-status" style="background: #fff3cd;">
+        <div class="stat-card">
             <span id="progresso-pct" class="stat-value">0%</span>
             <span class="stat-label">Concluído</span>
         </div>
     </div>
-    
-    <input type="text" id="busca" class="search-box" placeholder="🔍 Buscar por nome ou comunidade..." oninput="render()">
-    
-    <div style="display: flex; gap: 8px;">
-        <button onclick="gerarPDF()" class="btn-pdf" style="flex: 2;">📄 Relatório PDF</button>
-        <button onclick="verificarOffline()" class="btn-pdf" style="flex: 1; background: var(--apple-blue);">📡 Mapa Offline</button>
-    </div>
-    <button onclick="resetar()" class="btn-reset">⚠️ LIMPAR TODOS OS DADOS</button>
+    <input type="text" id="busca" class="search-box" placeholder="🔍 Buscar nome ou local..." oninput="render()">
+    <button onclick="gerarPDF()" class="btn-pdf">📄 Gerar Relatório PDF</button>
+    <button onclick="resetar()" class="btn-reset">⚠️ RESETAR SISTEMA (MOSTRAR CARDS)</button>
 </div>
 
 <div id="app-lista"></div>
 
 <script>
-// LISTA ORDENADA GEOGRAFICAMENTE: Inicia Sul (Hugo) -> Termina Norte (Igor)
-const roteiroGeografico = [
+const roteiroBase = [
     {id: 22, nome: "Hugo Fernandes Miranda", c: "Vargem Grande", lat: -20.470228, lon: -42.015106},
     {id: 16, nome: "Emely Carolayne Correa de Souza", c: "Vargem Grande", lat: -20.470664, lon: -42.014458},
     {id: 40, nome: "Sebastião dos Santos Ramos", c: "Vargem Grande", lat: -20.472664, lon: -42.013878},
@@ -117,20 +106,17 @@ const roteiroGeografico = [
 ];
 
 function init() {
-    let db = localStorage.getItem('v81_db');
-    if(!db) {
-        const setup = roteiroGeografico.map(item => ({...item, status: 'pendente', obs: '', ts: 0}));
-        localStorage.setItem('v81_db', JSON.stringify(setup));
+    let db = localStorage.getItem('v82_db');
+    // Se não houver dados ou a lista estiver vazia, recarrega do roteiroBase
+    if (!db || JSON.parse(db).length === 0) {
+        const setup = roteiroBase.map(item => ({...item, status: 'pendente', obs: '', ts: 0}));
+        localStorage.setItem('v82_db', JSON.stringify(setup));
     }
     render();
 }
 
-function verificarOffline() {
-    alert("DICA PARA ÁREAS RURAIS:\n1. Abra o app Google Maps.\n2. Busque por 'Alto Jequitibá'.\n3. Clique no nome da cidade e selecione 'Baixar Mapa Offline'.\n\nIsso garantirá que o botão ROTA funcione sem internet!");
-}
-
 function toggle(id) {
-    let db = JSON.parse(localStorage.getItem('v81_db'));
+    let db = JSON.parse(localStorage.getItem('v82_db'));
     let idx = db.findIndex(x => x.id === id);
     if(db[idx].status === 'pendente') {
         db[idx].status = 'concluido';
@@ -139,32 +125,33 @@ function toggle(id) {
         db[idx].status = 'pendente';
         db[idx].ts = 0;
     }
-    localStorage.setItem('v81_db', JSON.stringify(db));
+    localStorage.setItem('v82_db', JSON.stringify(db));
     render();
 }
 
 function salvarObs(id, texto) {
-    let db = JSON.parse(localStorage.getItem('v81_db'));
+    let db = JSON.parse(localStorage.getItem('v82_db'));
     let idx = db.findIndex(x => x.id === id);
     db[idx].obs = texto;
-    localStorage.setItem('v81_db', JSON.stringify(db));
+    localStorage.setItem('v82_db', JSON.stringify(db));
 }
 
 function render() {
     const container = document.getElementById('app-lista');
     const txt = document.getElementById('busca').value.toLowerCase();
-    let db = JSON.parse(localStorage.getItem('v81_db'));
+    let db = JSON.parse(localStorage.getItem('v82_db'));
 
+    // Atualiza stats
     const feitos = db.filter(x => x.status === 'concluido').length;
     document.getElementById('progresso-cont').innerText = `${feitos}/${db.length}`;
     document.getElementById('progresso-pct').innerText = `${Math.round((feitos/db.length)*100)}%`;
 
-    // Ordenação: Pendentes seguem o Roteiro -> Concluídos vão para o final
+    // Ordenação: Roteiro Geográfico -> Concluídos pro final
     db.sort((a, b) => {
         if (a.status === 'concluido' && b.status === 'concluido') return a.ts - b.ts;
         if (a.status === 'concluido') return 1;
         if (b.status === 'concluido') return -1;
-        return roteiroGeografico.findIndex(x => x.id === a.id) - roteiroGeografico.findIndex(x => x.id === b.id);
+        return roteiroBase.findIndex(x => x.id === a.id) - roteiroBase.findIndex(x => x.id === b.id);
     });
 
     let html = '';
@@ -172,7 +159,7 @@ function render() {
         if(!u.nome.toLowerCase().includes(txt) && !u.c.toLowerCase().includes(txt)) return;
         
         let hora = u.ts > 0 ? new Date(u.ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
-        let urlGps = `https://www.google.com/maps/dir/?api=1&destination=${u.lat},${u.lon}&travelmode=driving`;
+        let urlGps = `https://www.google.com/maps/dir/?api=1&destination=${u.lat},${u.lon}`;
 
         html += `
             <div class="card ${u.status}">
@@ -180,45 +167,35 @@ function render() {
                 ${u.ts > 0 ? `<span class="time-badge">VISTORIA: ${hora}</span>` : ''}
                 <span class="name-link">#${u.id} - ${u.nome.toUpperCase()}</span>
                 <span class="comunidade">${u.c}</span>
-                <textarea placeholder="Relatar ocorrência..." oninput="salvarObs(${u.id}, this.value)">${u.obs}</textarea>
+                <textarea placeholder="Observações..." oninput="salvarObs(${u.id}, this.value)">${u.obs}</textarea>
                 <button class="btn-status ${u.status === 'concluido' ? 'done' : ''}" onclick="toggle(${u.id})">
-                    ${u.status === 'concluido' ? '✅ FINALIZADO' : 'MARCAR COMO VISITADO'}
+                    ${u.status === 'concluido' ? '✅ CONCLUÍDO' : 'MARCAR VISITADO'}
                 </button>
             </div>
         `;
     });
-    container.innerHTML = html;
+    container.innerHTML = html || '<p style="text-align:center; padding:20px;">Nenhum card encontrado. Clique em RESETAR abaixo.</p>';
 }
 
 function gerarPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    let db = JSON.parse(localStorage.getItem('v81_db'));
+    let db = JSON.parse(localStorage.getItem('v82_db'));
     let visitados = db.filter(x => x.status === 'concluido').sort((a,b) => a.ts - b.ts);
     
-    doc.setFontSize(16);
-    doc.text("RELATÓRIO TÉCNICO DE CAMPO", 15, 20);
-    doc.setFontSize(10);
-    doc.text(`Gerado em: ${new Date().toLocaleString()} | Vistorias: ${visitados.length}`, 15, 28);
-    
-    let y = 40;
+    doc.text("RELATÓRIO DE VISTORIAS", 15, 20);
+    let y = 30;
     visitados.forEach((u, i) => {
         if(y > 270) { doc.addPage(); y = 20; }
-        doc.setFont(undefined, 'bold');
-        doc.text(`${i+1}. #${u.id} - ${u.nome} (${u.c})`, 15, y);
-        doc.setFont(undefined, 'normal');
-        let obs = doc.splitTextToSize(`Observação: ${u.obs || 'Nenhuma.'}`, 170);
-        doc.text(obs, 15, y+5);
-        y += 12 + (obs.length * 5);
+        doc.text(`${i+1}. ${u.nome} (${u.c}) - Obs: ${u.obs || 'S/O'}`, 15, y);
+        y += 10;
     });
-    doc.save("vistorias_alto_jequitiba.pdf");
+    doc.save("vistorias.pdf");
 }
 
 function resetar() {
-    if(confirm("Isso apagará todas as vistorias de hoje. Confirmar?")) {
-        localStorage.removeItem('v81_db');
-        location.reload();
-    }
+    localStorage.removeItem('v82_db');
+    location.reload();
 }
 
 window.onload = init;
