@@ -3,168 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Engenharia Campo v7.0 - Auto-Cronológico</title>
+    <title>Engenharia Campo v7.2 - Cronológico</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root { --apple-blue: #007AFF; --apple-green: #34C759; --apple-bg: #F2F2F7; }
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 10px; background: var(--apple-bg); padding-bottom: 120px; }
+        body { font-family: -apple-system, sans-serif; margin: 0; padding: 10px; background: var(--apple-bg); padding-bottom: 120px; }
         .dashboard { background: white; padding: 15px; border-radius: 15px; position: sticky; top: 10px; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 15px; }
         .search-box { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ccc; font-size: 16px; margin-bottom: 10px; box-sizing: border-box; }
-        .card { background: white; margin-bottom: 12px; border-radius: 14px; padding: 15px; border-left: 6px solid #FFCC00; transition: all 0.3s ease; }
-        .card.concluido { border-left-color: var(--apple-green); background: #f9fff9; order: 1; }
-        .time-badge { font-size: 0.7rem; color: #888; float: right; }
-        .name-link { color: var(--apple-blue); text-decoration: none; font-size: 1.1rem; font-weight: 600; display: block; margin: 5px 0; }
-        textarea { width: 100%; border-radius: 8px; border: 1px solid #ddd; padding: 10px; margin-top: 8px; box-sizing: border-box; font-size: 14px; }
-        .btn-status { width: 100%; padding: 12px; border: none; border-radius: 10px; margin-top: 10px; font-weight: bold; background: #E5E5EA; }
+        .card { background: white; margin-bottom: 12px; border-radius: 14px; padding: 15px; border-left: 6px solid #FFCC00; display: block; }
+        .card.concluido { border-left-color: var(--apple-green); background: #f9fff9; }
+        .time-badge { font-size: 0.75rem; color: #888; font-weight: bold; background: #eee; padding: 2px 5px; border-radius: 4px; }
+        .name-link { color: var(--apple-blue); font-size: 1.1rem; font-weight: 600; display: block; margin: 5px 0; }
+        textarea { width: 100%; border-radius: 8px; border: 1px solid #ddd; padding: 10px; margin-top: 8px; box-sizing: border-box; font-size: 14px; min-height: 60px; }
+        .btn-status { width: 100%; padding: 12px; border: none; border-radius: 10px; margin-top: 10px; font-weight: bold; background: #E5E5EA; font-size: 16px; }
         .btn-status.done { background: var(--apple-green); color: white; }
-        .btn-pdf { width: 100%; padding: 12px; background: #000; color: white; border-radius: 10px; font-weight: bold; border: none; }
+        .btn-pdf { width: 100%; padding: 12px; background: #000; color: white; border-radius: 10px; font-weight: bold; border: none; width: 100%; }
     </style>
 </head>
 <body>
 
 <div class="dashboard">
-    <input type="text" id="busca" class="search-box" placeholder="🔍 Buscar por nome ou número..." oninput="render()">
-    <button onclick="gerarPDF()" class="btn-pdf">📄 Gerar Relatório na Ordem de Visita</button>
+    <input type="text" id="busca" class="search-box" placeholder="🔍 Buscar nome ou número..." oninput="render()">
+    <button onclick="gerarPDF()" class="btn-pdf">📄 Gerar PDF (Ordem de Visita)</button>
 </div>
 
-<div id="app-lista" style="display: flex; flex-direction: column;"></div>
+<div id="app-lista"></div>
 
 <script>
-[cite_start]// Lista de beneficiários baseada no seu documento [cite: 1]
 const listaMestre = [
     {id: 1, nome: "ALEX ESTANECK COELHO", c: "Capim Roxo"},
     {id: 2, nome: "ALINE FERNANDES ESTANECK", c: "Jacutinga"},
     {id: 3, nome: "ANA MARIA DE FREITAS", c: "Tavares"},
-    {id: 4, nome: "ANGELICA DA SILVA MARTINS", c: "José Pedro"},
+    {id: 4, nome: "ANGELICA DA SILVA MARTINS", c: "Jose Pedro"},
     {id: 5, nome: "BRENO FERREIRA DA SILVA", c: "Vargem Grande"},
-    {id: 6, nome: "BRUNO FERREIRA ANDRADE", c: "Poço Danta"},
-    {id: 7, nome: "CAROLINA DAS GRAÇAS DE O. VIEIRA", c: "Vista Alegre"},
-    {id: 8, nome: "DANIELA MARCOLINO DE O. FARIA", c: "José Pedro"},
+    {id: 6, nome: "BRUNO FERREIRA ANDRADE", c: "Poco Danta"},
+    {id: 7, nome: "CAROLINA DAS GRACAS DE O VIEIRA", c: "Vista Alegre"},
+    {id: 8, nome: "DANIELA MARCOLINO DE O FARIA", c: "Jose Pedro"},
     {id: 9, nome: "DENIVAL WERNER", c: "Santo Augustinho"},
     {id: 10, nome: "DERCIO JOSE DE SOUZA", c: "Boa Sorte"},
-    {id: 11, nome: "DIRICINEIA FERREIRA DE A. CAMARA", c: "José Pedro"},
+    {id: 11, nome: "DIRICINEIA FERREIRA DE A CAMARA", c: "Jose Pedro"},
     {id: 12, nome: "EDSON INOCENCIO FERREIRA", c: "Vargem Grande"},
     {id: 13, nome: "EDUARDO EMERICK SOARES", c: "Vargem Grande"},
-    {id: 14, nome: "ELCEDIR COSTA FOCA DDE OLIVEIRA", c: "Vargem Grande"},
+    {id: 14, nome: "ELCEDIR COSTA FOCA DE OLIVEIRA", c: "Vargem Grande"},
     {id: 15, nome: "ELENICE CORREA SILVEIRA", c: "Jacutinga"},
     {id: 16, nome: "EMELY CAROLAYNE CORREA DE SOUZA", c: "Vargem Grande"},
-    {id: 17, nome: "FERNANDO DE ASSUNÇÃO QUEIROZ", c: "Vargem Grande"},
+    {id: 17, nome: "FERNANDO DE ASSUNCAO QUEIROZ", c: "Vargem Grande"},
     {id: 18, nome: "FRANCIELE PEREIRA FARIA VIERA", c: "Vargem Grande"},
-    {id: 19, nome: "GABRIELA ALVES DE A. FONSECA", c: "Jacutinga"},
+    {id: 19, nome: "GABRIELA ALVES DE A FONSECA", c: "Jacutinga"},
     {id: 20, nome: "GILSON GARCIAS DA ROZA JUNIOR", c: "Vargem Grande"},
-    {id: 21, nome: "GISELE CORREA VAZ", c: "Boa Esperança"},
+    {id: 21, nome: "GISELE CORREA VAZ", c: "Boa Esperanca"},
     {id: 22, nome: "HUGO FERNANDES MIRANDA", c: "Vargem Grande"},
     {id: 23, nome: "IGOR PORTUGAL CORREA", c: "Jacutinga"},
-    {id: 24, nome: "JAQUELINE DE OLIVEIRA B. GARCIA", c: "Indalassu"},
+    {id: 24, nome: "JAQUELINE DE OLIVEIRA B GARCIA", c: "Indalassu"},
     {id: 25, nome: "LARISSA FARIA BARROSO", c: "Vargem Grande"},
     {id: 26, nome: "LETICIA DE SOUZA MARTINS AZEVEDO", c: "Vista Bela"},
     {id: 27, nome: "LUANA MAGESTE SINDRA CAETANO", c: "Jacutinga"},
     {id: 28, nome: "LUCAS TARDEN DOS SANTOS", c: "Vargem Grande"},
     {id: 29, nome: "LUCY STANECK CORREA", c: "Jacutinga"},
-    {id: 30, nome: "MARCOS ANTONIO CESAR", c: "Poço Danta"},
+    {id: 30, nome: "MARCOS ANTONIO CESAR", c: "Poco Danta"},
     {id: 31, nome: "MARIANE VIANA DA ROZA", c: "Vargem Grande"},
-    {id: 32, nome: "MARLI OSORIO DOS SANTOS", c: "José Pedro"},
+    {id: 32, nome: "MARLI OSORIO DOS SANTOS", c: "Jose Pedro"},
     {id: 33, nome: "PAMELA BOREL DOS SANTOS SILVA", c: "Jacutinga"},
-    {id: 34, nome: "RAQUEL COSTA OLIVEIRA SILVA", c: "José Pedro"},
+    {id: 34, nome: "RAQUEL COSTA OLIVEIRA SILVA", c: "Jose Pedro"},
     {id: 35, nome: "REAN BRAZ DE OLIVEIRA LIMA", c: "Vargem Grande"},
     {id: 36, nome: "REGINALDO SILVESTRE DOS SANTOS", c: "Vargem Grande"},
-    {id: 37, nome: "RICARDO CUSTODIO DA SILVA", c: "José Pedro"},
+    {id: 37, nome: "RICARDO CUSTODIO DA SILVA", c: "Jose Pedro"},
     {id: 38, nome: "SABRINA SALIM ROQUE", c: "Jacutinga"},
     {id: 39, nome: "SEBASTIAO BARROSO", c: "Vargem Grande"},
-    {id: 40, nome: "SEBASTIÃO DOS SANTOS RAMOS", c: "Vargem Grande"},
+    {id: 40, nome: "SEBASTIAO DOS SANTOS RAMOS", c: "Vargem Grande"},
     {id: 41, nome: "SILVINA DE FATIMA PACHECO", c: "Jacutinga"},
     {id: 42, nome: "TATIANE MARQUES SANTOS", c: "Vargem Grande"},
     {id: 43, nome: "VANESSA CARLA CESAR DA ROZA", c: "Vargem Grande"},
-    {id: 44, nome: "VERONICA DA SILVA DIONIZIO", c: "José Pedro"},
+    {id: 44, nome: "VERONICA DA SILVA DIONIZIO", c: "Jose Pedro"},
     {id: 45, nome: "VILMA APARECIDA DOS SANTOS", c: "Jacutinga"},
     {id: 46, nome: "WALLACE BORGES DA ROZA", c: "Vargem Grande"},
     {id: 47, nome: "WARLEY BORGES DA ROZA", c: "Indalassu"}
 ];
 
 function init() {
-    let db = localStorage.getItem('v7_db');
+    // Tenta carregar o banco v7.2. Se não existir, cria.
+    let db = localStorage.getItem('v72_db');
     if(!db) {
-        const initialSetup = listaMestre.map(item => ({
-            ...item, status: 'pendente', obs: '', timestamp: 0
-        }));
-        localStorage.setItem('v7_db', JSON.stringify(initialSetup));
+        const setup = listaMestre.map(item => ({...item, status: 'pendente', obs: '', ts: 0}));
+        localStorage.setItem('v72_db', JSON.stringify(setup));
     }
     render();
 }
 
 function toggle(id) {
-    let db = JSON.parse(localStorage.getItem('v7_db'));
+    let db = JSON.parse(localStorage.getItem('v72_db'));
     let idx = db.findIndex(x => x.id === id);
-    
     if(db[idx].status === 'pendente') {
         db[idx].status = 'concluido';
-        db[idx].timestamp = Date.now(); // GRAVA DATA E HORA EXATA DO CLIQUE
+        db[idx].ts = Date.now(); // Marca hora/data exata
     } else {
         db[idx].status = 'pendente';
-        db[idx].timestamp = 0;
+        db[idx].ts = 0;
     }
-    
-    localStorage.setItem('v7_db', JSON.stringify(db));
+    localStorage.setItem('v72_db', JSON.stringify(db));
     render();
 }
 
 function salvarObs(id, texto) {
-    let db = JSON.parse(localStorage.getItem('v7_db'));
+    let db = JSON.parse(localStorage.getItem('v72_db'));
     let idx = db.findIndex(x => x.id === id);
     db[idx].obs = texto;
-    localStorage.setItem('v7_db', JSON.stringify(db));
+    localStorage.setItem('v72_db', JSON.stringify(db));
 }
 
 function render() {
     const container = document.getElementById('app-lista');
-    const busca = document.getElementById('busca').value.toLowerCase();
-    let db = JSON.parse(localStorage.getItem('v7_db'));
+    const txt = document.getElementById('busca').value.toLowerCase();
+    let db = JSON.parse(localStorage.getItem('v72_db'));
 
-    // REORGANIZAÇÃO AUTOMÁTICA: 
-    // 1. Pendentes ficam em ordem alfabética.
-    // 2. Concluídos vão para o fim da lista, ordenados pela HORA DO CLIQUE.
+    // ORDENAÇÃO: Pendentes (Alfabético) -> Concluídos (Data/Hora do Clique)
     db.sort((a, b) => {
-        if (a.status === 'concluido' && b.status === 'concluido') return a.timestamp - b.timestamp;
+        if (a.status === 'concluido' && b.status === 'concluido') return a.ts - b.ts;
         if (a.status === 'concluido') return 1;
         if (b.status === 'concluido') return -1;
         return a.nome.localeCompare(b.nome);
     });
 
-    container.innerHTML = db.filter(u => u.nome.toLowerCase().includes(busca) || u.id.toString().includes(busca)).map(u => `
-        <div class="card ${u.status}">
-            <span class="time-badge">${u.timestamp > 0 ? new Date(u.timestamp).toLocaleTimeString() : ''}</span>
-            <span class="name-link">#${u.id} - ${u.nome}</span>
-            <small>${u.c}</small>
-            <textarea placeholder="Ocorrências..." onchange="salvarObs(${u.id}, this.value)">${u.obs}</textarea>
-            <button class="btn-status ${u.status === 'concluido' ? 'done' : ''}" onclick="toggle(${u.id})">
-                ${u.status === 'concluido' ? '✅ VISITADO' : 'MARCAR COMO VISITADO'}
-            </button>
-        </div>
-    `).join('');
+    let html = '';
+    db.forEach(u => {
+        if(u.nome.toLowerCase().indexOf(txt) === -1 && u.id.toString() !== txt) return;
+        
+        let horaFormatada = u.ts > 0 ? new Date(u.ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
+        
+        html += `
+            <div class="card ${u.status}">
+                ${u.ts > 0 ? `<span class="time-badge">${horaFormatada}</span>` : ''}
+                <span class="name-link">#${u.id} - ${u.nome}</span>
+                <small>${u.c}</small>
+                <textarea placeholder="Ocorrências..." onchange="salvarObs(${u.id}, this.value)">${u.obs}</textarea>
+                <button class="btn-status ${u.status === 'concluido' ? 'done' : ''}" onclick="toggle(${u.id})">
+                    ${u.status === 'concluido' ? '✅ VISITADO' : 'MARCAR COMO VISITADO'}
+                </button>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
 }
 
 function gerarPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    let db = JSON.parse(localStorage.getItem('v7_db'));
+    let db = JSON.parse(localStorage.getItem('v72_db'));
+    let visitados = db.filter(x => x.status === 'concluido').sort((a,b) => a.ts - b.ts);
     
-    // Filtra e ordena apenas os visitados pela hora do clique para o PDF
-    let visitados = db.filter(x => x.status === 'concluido').sort((a, b) => a.timestamp - b.timestamp);
-    
-    doc.setFontSize(16);
-    doc.text("Relatório Cronológico de Vistorias", 15, 15);
+    doc.setFontSize(14);
+    doc.text("Relatorio de Vistorias - Ordem Cronologica", 15, 15);
     doc.setFontSize(10);
     
     let y = 30;
-    visitados.forEach((u, index) => {
-        if(y > 280) { doc.addPage(); y = 20; }
-        let hora = new Date(u.timestamp).toLocaleTimeString();
-        doc.text(`${index + 1}. [${hora}] #${u.id} - ${u.nome}`, 15, y);
-        doc.text(`   Ocorrência: ${u.obs || 'Nenhuma'}`, 15, y + 5);
+    visitados.forEach((u, i) => {
+        if(y > 275) { doc.addPage(); y = 20; }
+        let h = new Date(u.ts).toLocaleTimeString();
+        let d = new Date(u.ts).toLocaleDateString();
+        doc.text(`${i+1}. [${d} ${h}] #${u.id} - ${u.nome}`, 15, y);
+        doc.text(`   Obs: ${u.obs || 'Nenhuma'}`, 15, y+5);
         y += 15;
     });
-    
-    doc.save("vistorias_real_time.pdf");
+    doc.save("vistorias_cronologico.pdf");
 }
 
 window.onload = init;
